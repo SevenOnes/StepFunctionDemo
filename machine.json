@@ -5,24 +5,26 @@
 	"States": {
 		"Seed the DynamoDB Table": {
 			"Type": "Task",
-			"Resource": "arn:aws:lambda:eu-west-2:111111111111:function:seed-dynamodb-blog-function",
+			"Resource": "arn:aws:lambda:eu-west-2:822610072828:function:seed-dynamodb-blog-function",
 			"ResultPath": "$.List",
 			"Next": "Get All Users"
 		},
 		"Get All Users": {
 			"Type": "Task",
-			"Resource": "arn:aws:lambda:eu-west-2:111111111111:function:get_all_users",
+			"Resource": "arn:aws:lambda:eu-west-2:822610072828:function:get_all_users",
 			"Next": "Pass"
 		},
 		"Pass": {
+            "InputPath": "$.users[1:]",
 			"Type": "Pass",
-			"Next": "CheckUser"
+			"Next": "CheckUser",
+            "ResultPath": "$.users"
 		},
         "CheckUser":{
           "Type": "Choice",
           "Choices": [
             {
-              "Variable": "$.List[0]",
+              "Variable": "$.users[0]",
               "StringEquals": "DONE",
               "Next": "Success"
             }
@@ -32,12 +34,13 @@
 		"ValidateUser": {
 			"Type": "Parallel",
 			"Next": "CheckValid",
+            "ResultPath": "$.isValid",
 			"Branches": [{
 					"StartAt": "ValidateName",
 					"States": {
 						"ValidateName": {
 							"Type": "Task",
-							"Resource": "arn:aws:lambda:eu-west-2:111111111111:function:validate_name",
+							"Resource": "arn:aws:lambda:eu-west-2:822610072828:function:validate_name",
 							"End": true
 						}
 					}
@@ -47,7 +50,7 @@
 					"States": {
 						"ValidateSS": {
 							"Type": "Task",
-							"Resource": "arn:aws:lambda:eu-west-2:111111111111:function:validate_social_security",
+							"Resource": "arn:aws:lambda:eu-west-2:822610072828:function:validate_social_security",
 							"End": true
 						}
 					}
@@ -77,21 +80,22 @@
         "Type": "Choice",
         "Choices": [
           {
-            "Variable": "$.rating",
-            "NumericLessThanEquals": 3,
+            "Variable": "$.users[0].rating.S",
+            "StringLessThanEquals": "3",
             "Next": "SendEmail"
           },
           {
-            "Variable": "$.rating",
-            "NumericGreaterThanEquals": 3,
+            "Variable": "$.users[0].rating.S",
+            "StringGreaterThanEquals": "3",
             "Next": "Pass"
           }
         ]
       },
       "SendEmail": {
         "Type": "Task",
-        "Resource": "arn:aws:lambda:eu-west-2:111111111111:function:send_email",
-        "Next": "Pass"
+        "Resource": "arn:aws:lambda:eu-west-2:822610072828:function:send_email",
+        "Next": "Pass",
+        "ResultPath": "$.mail"
       },
       "Success": {
         "Type": "Succeed"
