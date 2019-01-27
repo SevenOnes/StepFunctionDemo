@@ -1,0 +1,100 @@
+{
+	"Comment": "An example of the Amazon States Language for reading messages from a DynamoDB table and sending them to SQS",
+	"StartAt": "Seed the DynamoDB Table",
+	"TimeoutSeconds": 3600,
+	"States": {
+		"Seed the DynamoDB Table": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:eu-west-2:111111111111:function:seed-dynamodb-blog-function",
+			"ResultPath": "$.List",
+			"Next": "Get All Users"
+		},
+		"Get All Users": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:eu-west-2:111111111111:function:get_all_users",
+			"Next": "Pass"
+		},
+		"Pass": {
+			"Type": "Pass",
+			"Next": "CheckUser"
+		},
+        "CheckUser":{
+          "Type": "Choice",
+          "Choices": [
+            {
+              "Variable": "$.List[0]",
+              "StringEquals": "DONE",
+              "Next": "Success"
+            }
+          ],
+          "Default": "ValidateUser"
+        },
+		"ValidateUser": {
+			"Type": "Parallel",
+			"Next": "CheckValid",
+			"Branches": [{
+					"StartAt": "ValidateName",
+					"States": {
+						"ValidateName": {
+							"Type": "Task",
+							"Resource": "arn:aws:lambda:eu-west-2:111111111111:function:validate_name",
+							"End": true
+						}
+					}
+				},
+				{
+					"StartAt": "ValidateSS",
+					"States": {
+						"ValidateSS": {
+							"Type": "Task",
+							"Resource": "arn:aws:lambda:eu-west-2:111111111111:function:validate_social_security",
+							"End": true
+						}
+					}
+				}
+			]
+		},
+      "CheckValid": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "And":[
+              {
+                "Variable": "$.isValid[0]",
+                "BooleanEquals": true
+              },
+              {
+                "Variable": "$.isValid[1]",
+                "BooleanEquals": true
+              }
+            ],
+            "Next": "CheckRating"
+          }
+        ],
+        "Default": "Pass"
+      },
+      "CheckRating": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.rating",
+            "NumericLessThanEquals": 3,
+            "Next": "SendEmail"
+          },
+          {
+            "Variable": "$.rating",
+            "NumericGreaterThanEquals": 3,
+            "Next": "Pass"
+          }
+        ]
+      },
+      "SendEmail": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:eu-west-2:111111111111:function:send_email",
+        "Next": "Pass"
+      },
+      "Success": {
+        "Type": "Succeed"
+      }
+	}
+}
