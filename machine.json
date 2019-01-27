@@ -15,14 +15,16 @@
 			"Next": "Pass"
 		},
 		"Pass": {
+            "InputPath": "$.users[1:]",
 			"Type": "Pass",
-			"Next": "CheckUser"
+			"Next": "CheckUser",
+            "ResultPath": "$.users"
 		},
         "CheckUser":{
           "Type": "Choice",
           "Choices": [
             {
-              "Variable": "$.List[0]",
+              "Variable": "$.users[0]",
               "StringEquals": "DONE",
               "Next": "Success"
             }
@@ -32,6 +34,7 @@
 		"ValidateUser": {
 			"Type": "Parallel",
 			"Next": "CheckValid",
+            "ResultPath": "$.isValid",
 			"Branches": [{
 					"StartAt": "ValidateName",
 					"States": {
@@ -77,13 +80,13 @@
         "Type": "Choice",
         "Choices": [
           {
-            "Variable": "$.rating",
-            "NumericLessThanEquals": 3,
+            "Variable": "$.users[0].rating.S",
+            "StringLessThanEquals": "3",
             "Next": "SendEmail"
           },
           {
-            "Variable": "$.rating",
-            "NumericGreaterThanEquals": 3,
+            "Variable": "$.users[0].rating.S",
+            "StringGreaterThanEquals": "3",
             "Next": "Pass"
           }
         ]
@@ -91,7 +94,8 @@
       "SendEmail": {
         "Type": "Task",
         "Resource": "arn:aws:lambda:eu-west-2:111111111111:function:send_email",
-        "Next": "Pass"
+        "Next": "Pass",
+        "ResultPath": "$.mail"
       },
       "Success": {
         "Type": "Succeed"
