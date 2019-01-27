@@ -15,10 +15,10 @@
 			"Next": "Pass"
 		},
 		"Pass": {
-            "InputPath": "$.users[1:]",
+            		"InputPath": "$.users[1:]",
 			"Type": "Pass",
 			"Next": "CheckUser",
-            "ResultPath": "$.users"
+            		"ResultPath": "$.users"
 		},
         "CheckUser":{
           "Type": "Choice",
